@@ -42,7 +42,7 @@ Route::get('category','API\CategoryController@listItems');
 Route::post('category/changestatus/{id}','API\CategoryController@changeStatus');
 Route::delete('category/{id}','API\Categorycontroller@deleteItems');
 Route::post('category/add','API\Categorycontroller@addItems');
-
+Route::put('category/update/{id}','API\Categorycontroller@editCategory');
 	
 });
 // });

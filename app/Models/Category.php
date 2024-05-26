@@ -10,6 +10,8 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Passport\HasApiTokens;
 use Hash;
 use Str;
+use Storage;
+use File;
 
 class Category extends Model
 {
@@ -17,7 +19,10 @@ class Category extends Model
 
 
     protected $fillable = ['parent_id', 'name', 'image', 'slug', 'description', 'status', 'meta_title', 'meta_description', 'meta_keywords'];
-
+    public function getImageAttribute($value)
+    {
+        return ($value) ? config('global.storage_url')."/category/".$value : config('global.profile_image')."noimage.png"  ;
+    }
     public function prepareCreateData($inputs)
     {
         $data = [];
@@ -28,22 +33,36 @@ class Category extends Model
         // Check if the 'image' key exists and is not empty
         if (array_key_exists('image', $inputs) && !empty($inputs['image'])) {
             // Pass the base64-encoded image directly to the uploadProfileImage method
-            $img = $this->uploadProfileImage($inputs['image']);
+            $img = $this->uploadImage($inputs['image']);
             $data['image'] = $img;
         }
     
         return $data;
     }
+    public function uploadImage($file)
+    {
+        $fileExtension = $file->getClientOriginalExtension();
+        $fileName = time() . '_' . uniqid() . '.' . $fileExtension;
+        Storage::disk('public')->put('category/' . $fileName, File::get($file));
+        return $fileName;  // Only return the file name
+    }
     
 
-    // public function prepareUpdateData($inputs,$category)
-    // {
-    //     $data = [];
-    //     $data['name']= array_key_exists('name',$inputs) ? $inputs['name'] : $user->name;
-    //     $slug = Str::slug($data['name']);
-    //     $slug = Str::slug($data['name']);
-    //     return $data;
-    // }
+    public function prepareUpdateData($inputs, $category)
+    {
+        $data = [];
+        $data['name'] = array_key_exists('name', $inputs) ? $inputs['name'] : $category->name;
+        $data['description'] = array_key_exists('description', $inputs) ? $inputs['description'] : $category->description;
+        $data['slug'] = Str::slug($data['name']);
+    
+        // Add image if it exists in inputs
+        if (array_key_exists('image', $inputs) && !empty($inputs['image'])) {
+            $data['image'] = $inputs['image'];
+        }
+    
+        return $data;
+    }
+    
     /**
      * The attributes that are mass assignable.
      *

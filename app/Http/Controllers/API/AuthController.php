@@ -37,7 +37,7 @@ class AuthController extends Controller
         }
 
         $user = User::where('email', $request->email)->first();
-        if (!$user || $user->user_type == '1') {
+        if (!$user || $user->user_type !== '1') {
             return response()->json(['error' => 'Invalid email/password'], 404);
         }
 

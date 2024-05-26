@@ -213,6 +213,7 @@ public function listItems(Request $request)
 //         return response()->json(['error' => $ex->getMessage()], 500); // 500 Internal Server Error
 //     }
 // }
+
 public function addItems(Request $request)
 {
     try {
@@ -221,8 +222,8 @@ public function addItems(Request $request)
         // Validation rules
         $rules = [
             'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            // 'image' => 'nullable|string', // We expect Base64-encoded image data
+            // 'description' => 'required|nullable|string',
+            'image' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:2048', // Correct validation rules
         ];
 
         // Validate request
@@ -230,91 +231,39 @@ public function addItems(Request $request)
         if ($validator->fails()) {
             return response()->json(['error' => $validator->errors()->all()], 400); // 400 Bad Request
         }
-        $slug = Str::slug($inputs['name']);
+
+       
         // Create category data
-        $categoryData = [
-            'name' => $inputs['name'],
-            'description' => $inputs['description'],
-            'slug'=>$slug,
-        ];
+        // $categoryData = [
+        //     'name' => $inputs['name'],
+        //     'description' => $inputs['description'],
+        //     'slug' => $slug,
+        //     'image'=>$inputs['image'],
+        // ];
 
-        
-
-        // Get the base64 string
-        $imageData = $request->input('image');
-// print_r($imageData);die;
-        // Check if the base64 string contains the image type
-        if (preg_match('/^data:image\/(\w+);base64,/', $imageData, $type)) {
-            $data = substr($imageData, strpos($imageData, ',') + 1);
-            $type = strtolower($type[1]); // jpg, png, gif, etc.
-
-            // Check if file type is valid
-            if (!in_array($type, ['jpg', 'jpeg', 'png', 'gif'])) {
-                return response()->json(['success' => false, 'message' => 'Invalid image type'], 400);
-            }
-
-            $data = base64_decode($data);
-
-            if ($data === false) {
-                return response()->json(['success' => false, 'message' => 'Base64 decode failed'], 400);
-            }
-        } else {
-            return response()->json(['success' => false, 'message' => 'Invalid base64 string'], 400);
-        }
-
-        // Generate a unique filename
-        $filename = Str::random(10) . '.' . $type;
-        $path = 'images/' . $filename;
-
-        // Store the image
-        Storage::disk('public')->put($path, $data);
-        $categoryData['image']=$filename;
-        
-
-
-        // Check if image data is provided
-        // if (isset($inputs['image'])) {
-        //     // Decode Base64-encoded image data
-           
-        //     $imageData = $inputs['image'];
-        //     $imageData = str_replace('data:image/png;base64,', '', $imageData);
-        //     $imageData = str_replace(' ', '+', $imageData);
-        //     $imageData = base64_decode($imageData);
-
-        //     // Generate a unique filename for the image
-        //     $imageName = uniqid() . '.png';
-
-        //     // Store the image file in the storage directory
-        //     $imagePath = storage_path('app/public/') . $imageName;
-        //     file_put_contents($imagePath, $imageData);
-
-        //     // Add image path to category data
-        //     $categoryData['image'] = $imageName;
-        // }
-
-        
-
+        // Handle the uploaded file
         // if ($request->hasFile('image')) {
-        //     $image = $request->file('image');
-        //     $filename = time() . '.' . $image->getClientOriginalExtension();
-        //     $path = $image->storeAs('images', $filename, 'public');
+        //     $file = $request->file('image');
+        //     $extension = $file->getClientOriginalExtension();
 
-        //     return response()->json([
-        //         'success' => true,
-        //         'path' => $path,
-        //         'filename' => $filename,
-        //     ]);
+        //     // Generate a unique filename
+        //     $filename = Str::random(10) . '.' . $extension;
+        //     $path = 'category/' . $filename;
+
+        //     // Store the image
+        //     $file->storeAs('public/category', $filename);
+        //     $categoryData['image'] = $filename;
         // }
-
-
-        
-
 
         // Create category
+        $cat = new Category();
+        $categoryData = $cat->prepareCreateData($inputs);
+
+        
         $category = Category::create($categoryData);
 
         if ($category) {
-            return response()->json(['category' => $category, 'message' => 'Category added successfully'], 200); // 201 Created
+            return response()->json(['category' => $category, 'message' => 'Category added successfully'], 201); // 201 Created
         }
 
         return response()->json(['error' => 'Failed to add category'], 500); // 500 Internal Server Error
@@ -324,8 +273,52 @@ public function addItems(Request $request)
         return response()->json(['error' => $ex->getMessage()], 500); // 500 Internal Server Error
     }
 }
+public function editCategory(Request $request, $id)
+{
+    try {
+        // Retrieve the category by ID
+        $category = Category::findOrFail($id);
 
+        // Collect all inputs
+        $inputs = $request->all();
+
+        // Validation rules
+        $rules = [
+            'name' => 'sometimes|required|string|max:255',
+            'description' => 'nullable|string',
+            'image' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:2048',
+        ];
+
+        // Validate request
+        $validator = Validator::make($inputs, $rules);
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()->all()], 400); // 400 Bad Request
+        }
+
+        // Prepare the update data
+        $data = $category->prepareUpdateData($inputs, $category);
+
+        // Handle the uploaded file if exists
+        if ($request->hasFile('image')) {
+            // Unlink the old image if it exists
+            if ($category->image) {
+                Storage::disk('public')->delete('category/' . $category->image);
+            }
+
+            // Upload new image
+            $file = $request->file('image');
+            
+            $data['image'] = $category->uploadImage($file);
+        }
+
+        // Update the category
+        $category->update($data);
+
+        return response()->json(['category' => $category, 'message' => 'Category updated successfully'], 200); // 200 OK
+    } catch (NotFoundHttpException $ex) {
+        return response()->json(['error' => 'Category not found'], 404); // 404 Not Found
+    } catch (Exception $ex) {
+        return response()->json(['error' => $ex->getMessage()], 500); // 500 Internal Server Error
+    }
 }
-
-
-	
+}
