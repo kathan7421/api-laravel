@@ -20,30 +20,6 @@ class CategoryController extends Controller
 	use ResponseTrait;
 
 	
-
-// 	public function listItems(Request $request)
-// {
-//     try {
-//         $per_page = $request->input('per_page', 10);
-//         $sortBy = $request->input('sortBy', 'id');
-//         $search = $request->input('search', null);
-//         $direction = strtoupper($request->input('sortDirection', 'ASC'));
-
-//         $query = Category::query(); // Start building the query
-        
-//         if ($search) {
-//             $query->where('name', 'like', '%' . $search . '%');
-//         }
-
-//         $query->orderBy($sortBy, $direction);
-
-//         $categories = $query->paginate($per_page);
-
-//         return $this->successResponse($categories->toArray(), 'List of Categories');
-//     } catch (Exception $ex) {
-//         return $this->sendErrorResponse($ex);
-//     }
-// }
 public function listItems(Request $request)
 {
     try {
@@ -68,23 +44,21 @@ public function listItems(Request $request)
     }
 }
 
-
-
-	public function getItems($id)
+public function getItems($id)
 	{
 		
 		try{
-			$user = User::where('id',$id)->first();
-			if(!$user){
-				return $this->notFoundRequest("User Details not found");
+			$cat = Category::where('id',$id)->first();
+			if(!$cat){
+				return $this->notFoundRequest("Category Details not found");
 			}
-			return $this->successResponse($user->toArray(),"User details");
+			return $this->successResponse($cat->toArray(),"Category details");
 		}catch(Exception $ex){
 			return $this->sendErrorResponse($ex);
 		}
 
 	}
-    public function changeStatus(Request $request,$id){
+public function changeStatus(Request $request,$id){
         try
         {
             $categories = Category::where('id',$id)->first();
@@ -102,57 +76,57 @@ public function listItems(Request $request)
 			return $this->sendErrorResponse($ex);
 		}
     }
-	public function updateData(Request $request,$id)
-	{
-		try{
+// public function updateData(Request $request,$id)
+// 	{
+// 		try{
 
-			$users = User::where('id',$id)->first();
-			if(!$users)
-			{
-				return $this->sendBadRequest('Request Not Found');
-			}
-			$inputs = $request->all();
-			$rules = [
-				'name'=>'required',
-				'email'=>'required',
-				'password'=>'required',
-			];
-			$message =  [
+// 			$users = User::where('id',$id)->first();
+// 			if(!$users)
+// 			{
+// 				return $this->sendBadRequest('Request Not Found');
+// 			}
+// 			$inputs = $request->all();
+// 			$rules = [
+// 				'name'=>'required',
+// 				'email'=>'required',
+// 				'password'=>'required',
+// 			];
+// 			$message =  [
 
-				'name.required'=>'Name Field  Is Required',
-				'email.required'=>'Email Field Is Required',
-				'password.required'=>'Password Field Is Required',
+// 				'name.required'=>'Name Field  Is Required',
+// 				'email.required'=>'Email Field Is Required',
+// 				'password.required'=>'Password Field Is Required',
 
-			];
+// 			];
 
-			$validator = Validator::make($inputs,$rules,$message);
-			if($validator->fails())
-			{
-				return $this->sendBadRequest(implode(',',$validator->errors()->all()));
-			}
-					// print_r($user);die;
-			$preparedata = $users->prepareUpdateData($inputs,$users);
-			foreach($preparedata as $key=>$value)
-			{
-				$users->$key = $value;
-			}
-				// print_r($users->toArray());die;	
-			if($users->save())
-			{
-				$msg = "Request Updated successfully";
-					// print_r($users->toArray());die;
-				return $this->successResponse([],$msg);
+// 			$validator = Validator::make($inputs,$rules,$message);
+// 			if($validator->fails())
+// 			{
+// 				return $this->sendBadRequest(implode(',',$validator->errors()->all()));
+// 			}
+// 					// print_r($user);die;
+// 			$preparedata = $users->prepareUpdateData($inputs,$users);
+// 			foreach($preparedata as $key=>$value)
+// 			{
+// 				$users->$key = $value;
+// 			}
+// 				// print_r($users->toArray());die;	
+// 			if($users->save())
+// 			{
+// 				$msg = "Request Updated successfully";
+// 					// print_r($users->toArray());die;
+// 				return $this->successResponse([],$msg);
 
-			}
-		}
-		catch(NotFoundHttpException $ex) 
-		{
-			return $this->notFoundRequest($ex);
-		}catch(Execption $ex){
-			return $this->sendErrorResponse($ex);
-		}
-	}
-	public function deleteItems($id)
+// 			}
+// 		}
+// 		catch(NotFoundHttpException $ex) 
+// 		{
+// 			return $this->notFoundRequest($ex);
+// 		}catch(Execption $ex){
+// 			return $this->sendErrorResponse($ex);
+// 		}
+// 	}
+public function deleteItems($id)
 {
     try {
         $category = Category::find($id);
@@ -163,6 +137,7 @@ public function listItems(Request $request)
 
         // Check if the image exists before attempting to delete it
         if ($category->image && Storage::disk('public')->exists($category->image)) {
+            // Delete the image file
             Storage::disk('public')->delete($category->image);
         }
 
@@ -222,8 +197,8 @@ public function addItems(Request $request)
         // Validation rules
         $rules = [
             'name' => 'required|string|max:255',
-            // 'description' => 'required|nullable|string',
-            'image' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:2048', // Correct validation rules
+            'description' => 'required|string',
+            'image' => 'nullable|string', // Accept base64 string
         ];
 
         // Validate request
@@ -232,34 +207,21 @@ public function addItems(Request $request)
             return response()->json(['error' => $validator->errors()->all()], 400); // 400 Bad Request
         }
 
-       
-        // Create category data
-        // $categoryData = [
-        //     'name' => $inputs['name'],
-        //     'description' => $inputs['description'],
-        //     'slug' => $slug,
-        //     'image'=>$inputs['image'],
-        // ];
-
-        // Handle the uploaded file
-        // if ($request->hasFile('image')) {
-        //     $file = $request->file('image');
-        //     $extension = $file->getClientOriginalExtension();
-
-        //     // Generate a unique filename
-        //     $filename = Str::random(10) . '.' . $extension;
-        //     $path = 'category/' . $filename;
-
-        //     // Store the image
-        //     $file->storeAs('public/category', $filename);
-        //     $categoryData['image'] = $filename;
-        // }
-
+        // Decode and save image if provided
+        $imageName = null;
+        if ($request->has('image') && $request->input('image')) {
+            $imagePath = $this->base64ToImage($request->input('image'));
+            $imageName = basename($imagePath);
+        }
+        $slug = Str::slug($inputs['name']);
         // Create category
-        $cat = new Category();
-        $categoryData = $cat->prepareCreateData($inputs);
+        $categoryData = [
+            'name' => $inputs['name'],
+            'description' => $inputs['description'],
+            'slug'=> $slug,
+            'image' => $imageName ? url('storage/' . $imagePath) : null // Return the full URL
+        ];
 
-        
         $category = Category::create($categoryData);
 
         if ($category) {
@@ -273,6 +235,25 @@ public function addItems(Request $request)
         return response()->json(['error' => $ex->getMessage()], 500); // 500 Internal Server Error
     }
 }
+
+/**
+ * Decode base64 image and save it to storage.
+ *
+ * @param string $base64Image
+ * @return string|null
+ * @throws \Exception
+ */
+private function base64ToImage($base64Image)
+{
+    $image = explode('base64,', $base64Image);
+    $image = end($image);
+    $image = str_replace(' ', '+', $image);
+    $file = "category/" . uniqid() . '.png';
+
+    Storage::disk('public')->put($file, base64_decode($image));
+
+    return $file;
+}
 public function editCategory(Request $request, $id)
 {
     try {
@@ -285,8 +266,8 @@ public function editCategory(Request $request, $id)
         // Validation rules
         $rules = [
             'name' => 'sometimes|required|string|max:255',
-            'description' => 'nullable|string',
-            'image' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:2048',
+            'description' => 'sometimes|required|string',
+            'image' => 'nullable|string', // Accept base64 string
         ];
 
         // Validate request
@@ -295,24 +276,27 @@ public function editCategory(Request $request, $id)
             return response()->json(['error' => $validator->errors()->all()], 400); // 400 Bad Request
         }
 
-        // Prepare the update data
-        $data = $category->prepareUpdateData($inputs, $category);
+        // Decode and save image if provided
+        if ($request->has('image') && $request->input('image')) {
+            $imagePath = $this->base64ToImage($request->input('image'));
+            $imageName = basename($imagePath);
 
-        // Handle the uploaded file if exists
-        if ($request->hasFile('image')) {
             // Unlink the old image if it exists
             if ($category->image) {
                 Storage::disk('public')->delete('category/' . $category->image);
             }
 
-            // Upload new image
-            $file = $request->file('image');
-            
-            $data['image'] = $category->uploadImage($file);
+            // Update the image path in the database
+            $category->image = $imageName;
         }
 
-        // Update the category
-        $category->update($data);
+        // Update other fields if provided
+        $category->name = $inputs['name'] ?? $category->name;
+        $category->description = $inputs['description'] ?? $category->description;
+        $category->slug = Str::slug($inputs['name'] ?? $category->name);
+
+        // Save the changes
+        $category->save();
 
         return response()->json(['category' => $category, 'message' => 'Category updated successfully'], 200); // 200 OK
     } catch (NotFoundHttpException $ex) {
