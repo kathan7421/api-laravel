@@ -147,6 +147,7 @@ private function base64ToImage($base64Image)
 
 public function updateItems(Request $request, $id)
 {
+    
     try {
         // Find the product by ID
         $product = Product::findOrFail($id);
