@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class AddProductsFields extends Migration
+class AddCountryFileds extends Migration
 {
     /**
      * Run the migrations.
@@ -13,9 +13,11 @@ class AddProductsFields extends Migration
      */
     public function up()
     {
-        Schema::table('product', function (Blueprint $table) {
-            $table->string('sku')->nullable();
-            // $table->string('product_no')->unique();
+        Schema::table('country', function (Blueprint $table) {
+            $table->string('slug');
+            $table->string('meta_title')->nullable();
+            $table->string('meta_description')->nullable();
+            $table->string('meta_keywords')->nullable();
         });
     }
 
@@ -26,7 +28,7 @@ class AddProductsFields extends Migration
      */
     public function down()
     {
-        Schema::table('product', function (Blueprint $table) {
+        Schema::table('country', function (Blueprint $table) {
             //
         });
     }

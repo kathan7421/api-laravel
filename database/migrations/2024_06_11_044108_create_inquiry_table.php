@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class AddProductsFields extends Migration
+class CreateInquiryTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,9 +13,9 @@ class AddProductsFields extends Migration
      */
     public function up()
     {
-        Schema::table('product', function (Blueprint $table) {
-            $table->string('sku')->nullable();
-            // $table->string('product_no')->unique();
+        Schema::create('inquiry', function (Blueprint $table) {
+            $table->id();
+            $table->timestamps();
         });
     }
 
@@ -26,8 +26,6 @@ class AddProductsFields extends Migration
      */
     public function down()
     {
-        Schema::table('product', function (Blueprint $table) {
-            //
-        });
+        Schema::dropIfExists('inquiry');
     }
 }

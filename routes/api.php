@@ -6,6 +6,7 @@ use App\Http\Controllers\API\ProductController;
 use App\Http\Controllers\API\OrdersController;
 use App\Http\Controllers\API\BannerController;
 use App\Http\Controller\API\DashboardController;
+use App\Http\Controller\API\CountryController;
 
 
 /*
@@ -72,6 +73,17 @@ Route::group(['middleware'=>'auth:api'],function(){
 	//Banners
 	Route::post('banner/add','API\BannerController@addItems')->name('banner.add');
 	Route::get('banners','API\BannerController@listItems')->name('banners');
+
+
+
+	//Country
+	Route::get('country','API\CountryController@listItems');
+	Route::post('country/add','API\CountryController@addItems')->name('country.add');
+	Route::post('country/update/{id}','API\CountryController@updateItems')->name('country.update');
+	Route::get('country/{id}', 'API\CountryController@getItems');
+	Route::post('country/changestatus/{id}','API\CountryController@changeStatus');
+	Route::delete('country/{id}','API\CountryController@deleteItems');
+
 	
 });
 

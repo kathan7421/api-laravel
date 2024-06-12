@@ -219,7 +219,7 @@ public function addItems(Request $request)
             'name' => $inputs['name'],
             'description' => $inputs['description'],
             'slug'=> $slug,
-            'image' => $imageName ? url('storage/' . $imagePath) : null // Return the full URL
+            'image' => $imageName  // Return the full URL
         ];
 
         $category = Category::create($categoryData);
@@ -245,15 +245,22 @@ public function addItems(Request $request)
  */
 private function base64ToImage($base64Image)
 {
+    // Extract the base64 content
     $image = explode('base64,', $base64Image);
     $image = end($image);
     $image = str_replace(' ', '+', $image);
-    $file = "category/" . uniqid() . '.png';
 
-    Storage::disk('public')->put($file, base64_decode($image));
+    // Generate a unique file name
+    $fileName = uniqid() . '.png';
+    $filePath = "category/" . $fileName;
 
-    return $file;
+    // Save the image to the specified disk (public)
+    Storage::disk('public')->put($filePath, base64_decode($image));
+
+    // Return the file name
+    return $fileName;
 }
+
 public function editCategory(Request $request, $id)
 {
     try {
@@ -277,17 +284,20 @@ public function editCategory(Request $request, $id)
         }
 
         // Decode and save image if provided
-        if ($request->has('image') && $request->input('image')) {
-            $imagePath = $this->base64ToImage($request->input('image'));
-            $imageName = basename($imagePath);
+        if ($request->has('image') && $request->image !== null && $request->image !== "") {
+            $imageName = $this->base64ToImage($request->input('image'));
 
-            // Unlink the old image if it exists
+            // Delete the old image if it exists
             if ($category->image) {
                 Storage::disk('public')->delete('category/' . $category->image);
             }
 
-            // Update the image path in the database
+            // Update the image name in the database
             $category->image = $imageName;
+        }
+        else {
+            // No new image provided, retain the old image
+            $inputs['image'] = $category->image;
         }
 
         // Update other fields if provided

@@ -16,19 +16,28 @@ class Product extends Model
 {
     use HasFactory , HasApiTokens , Notifiable;
     protected $table = 'product';
-   protected $fillable = ['name', 'description', 'price', 'qty', 'category_id', 'image', 'slug', 'status', 'meta_title', 'meta_description', 'meta_keywords'];
-   public function getImageAttribute($value)
+   protected $fillable = ['name', 'description', 'price', 'qty', 'category_id', 'image', 'slug', 'status', 'meta_title', 'meta_description', 'meta_keywords','sku'];
+   public function getImageAttribute($value, $showFullPath = true)
    {
        if (!$value) {
            return config('global.profile_image') . "noimage.png";
        }
-       
-       if (strpos($value, 'http') === 0) {
-           return $value;
+   
+       if ($showFullPath) {
+           if (strpos($value, 'http') === 0) {
+               return $value;
+           }
+   
+           return config('global.storage_url') . "/product/" . $value;
+       } else {
+           return basename($value); // Return only the image name
        }
-       
-       return config('global.storage_url') . "/product/" . $value;
    }
+   
+// public function getImageAttribute($value)
+//     {
+//         return basename($value); // This will return just the file name
+//     }
    public function prepareCreateData($inputs)
    {
        $data = [];
