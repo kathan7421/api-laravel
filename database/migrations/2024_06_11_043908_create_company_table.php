@@ -13,8 +13,22 @@ class CreateCompanyTable extends Migration
      */
     public function up()
     {
-        Schema::create('company', function (Blueprint $table) {
+        Schema::create('company_details', function (Blueprint $table) {
             $table->id();
+            $table->string('user_id')->nullable();
+            $table->string('name')->nullable();
+            $table->Text('description')->nullable();
+            $table->string('fax')->nullable();
+            $table->string('email')->nullable();
+            $table->string('phone')->nullable();
+            $table->string('website')->nullable();
+            $table->Text('address')->nullable();
+            $table->string('logo')->nullable();
+            $table->string('cover_photo')->nullable();
+            $table->string('country')->nullable();
+            $table->string('city')->nullable();
+            $table->string('register_number')->nullable(); //company register or not
+            $table->string('gst_number')->nullable();
             $table->timestamps();
         });
     }

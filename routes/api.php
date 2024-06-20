@@ -7,6 +7,8 @@ use App\Http\Controllers\API\OrdersController;
 use App\Http\Controllers\API\BannerController;
 use App\Http\Controller\API\DashboardController;
 use App\Http\Controller\API\CountryController;
+use App\Http\Controller\API\AuthController;
+use App\Http\Controller\API\CmspagesController;
 
 
 /*
@@ -20,17 +22,20 @@ use App\Http\Controller\API\CountryController;
 |
 */
 
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-	return $request->user();
-});
-
 // Route::middleware('prevent.browser.access')->group(function () {
     // Define your API routes here
-
+	Route::fallback(function () {
+		return response()->json(['message' => 'Resource not found.'], 404);
+	});
 
     // Define your API routes here
 Route::post('login','API\AuthController@login')->name('login');
 Route::post('register','API\AuthController@register');
+Route::post('forget-password', 'API\AuthController@forgetPassword');
+Route::post('password/reset', 'API\AuthController@resetPassword')->name('password.reset');
+Route::get('cms/all','API\CmspagesController@index'); // Fetch all CMS pages
+Route::get('cms/{slug}', 'API\CmspagesController@show'); // Fetch a single CMS page by slug
+
 // Route::get('get','API\AuthController@getitems');
 
 Route::group(['middleware'=>'auth:api'],function(){
@@ -71,8 +76,13 @@ Route::group(['middleware'=>'auth:api'],function(){
 
 
 	//Banners
-	Route::post('banner/add','API\BannerController@addItems')->name('banner.add');
+	Route::get('banners/{id}','API\BannerController@getItems');
+	Route::post('banners/add','API\BannerController@addItems')->name('banner.add');
 	Route::get('banners','API\BannerController@listItems')->name('banners');
+	Route::post('banners/update/{id}', 'API\BannerController@updateItems');
+	Route::post('banners/changestatus/{id}','API\BannerController@changeStatus');
+	Route::delete('banners/{id}','API\BannerController@deleteItems');
+
 
 
 
@@ -83,6 +93,15 @@ Route::group(['middleware'=>'auth:api'],function(){
 	Route::get('country/{id}', 'API\CountryController@getItems');
 	Route::post('country/changestatus/{id}','API\CountryController@changeStatus');
 	Route::delete('country/{id}','API\CountryController@deleteItems');
+
+	//Cms Page
+	Route::post('cms/add','API\CmspagesController@addItems');
+	Route::get('cms','API\CmspagesController@listItems');
+	Route::get('cms/get/{id}','API\CmspagesController@getItems');
+	Route::post('cms/changestatus/{id}','API\CmspagesController@changeStatus');
+	Route::delete('cms/delete/{id}','API\CmspagesController@deleteItems');
+	Route::post('cms/update/{id}','API\CmspagesController@updateItems');
+	
 
 	
 });

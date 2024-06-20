@@ -266,7 +266,10 @@ public function editCategory(Request $request, $id)
     try {
         // Retrieve the category by ID
         $category = Category::findOrFail($id);
+        if(!$category){
+            return response()->json(['error' => 'Catgory page not found'], 404);
 
+        }
         // Collect all inputs
         $inputs = $request->all();
 
