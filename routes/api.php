@@ -101,6 +101,10 @@ Route::group(['middleware'=>'auth:api'],function(){
 	Route::post('cms/changestatus/{id}','API\CmspagesController@changeStatus');
 	Route::delete('cms/delete/{id}','API\CmspagesController@deleteItems');
 	Route::post('cms/update/{id}','API\CmspagesController@updateItems');
+
+
+	//company
+	Route::get('company','API\CompanyController@listItems');
 	
 
 	

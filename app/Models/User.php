@@ -8,6 +8,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 // use Laravel\Sanctum\HasApiTokens;
 use Laravel\Passport\HasApiTokens;
+use App\Models\Company;
 use Hash;
 
 class User extends Authenticatable
@@ -87,5 +88,8 @@ class User extends Authenticatable
         file_put_contents($file, $image_base64);
         return $f_name;
     }
-
+    public function company()
+    {
+        return $this->hasOne(Company::class, 'user_id', 'id');
+    }
 }
