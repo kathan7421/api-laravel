@@ -234,8 +234,36 @@ public function addItems(Request $request)
     } catch (Exception $ex) {
         return response()->json(['error' => $ex->getMessage()], 500); // 500 Internal Server Error
     }
-}
+}public function deleteCategories(Request $request)
+{
+    $categoryIds = $request->input('categoryIds');
 
+    if (empty($categoryIds) || !is_array($categoryIds)) {
+        return response()->json(['error' => 'Invalid Category IDs provided.'], 400);
+    }
+
+    try {
+        $categories = Category::whereIn('id', $categoryIds)->get();
+
+        if ($categories ->isEmpty()) {
+            return response()->json(['error' => 'No valid category found.'], 404);
+        }
+
+        foreach ($categories as $category) {
+          
+            // Delete associated files
+            $category->deleteFiles();
+
+            // Delete the company record
+            $category->delete();
+        }
+
+        return response()->json(['success' => 'Selected categories  deleted successfully.'], 200);
+    } catch (\Exception $ex) {
+        \Log::error("Error deleting companies: " . $ex->getMessage());
+        return response()->json(['error' => $ex->getMessage()], 500);
+    }
+}
 /**
  * Decode base64 image and save it to storage.
  *

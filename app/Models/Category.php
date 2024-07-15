@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Notifications\Notifiable;
 // use Laravel\Sanctum\HasApiTokens;
 use Laravel\Passport\HasApiTokens;
+use App\Models\Product;
 use Hash;
 use Str;
 use Storage;
@@ -115,6 +116,21 @@ class Category extends Model
     //     return $f_name;
     // }
     
+    public function product()
+    {
+        return $this->hasOne(Product::class, 'category_id', 'id');
+    } 
+
+    public function deleteFiles()
+    {
+        $files = ['image'];
+    
+        foreach ($files as $file) {
+            if ($this->$file) {
+                Storage::disk('public')->delete('category/' . $file . '/' . $this->$file);
+            }
+        }
+    }
     
 
 }

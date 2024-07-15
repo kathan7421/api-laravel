@@ -194,6 +194,27 @@ public function deleteItems($id){
         return $this->sendErrorResponse($ex);
     }
     }
+    public function deleteall(Request $request){
+        try{
+            $ids = $request->input('bannerIds');
+            if(empty($ids) || !is_array($ids)){
+                return $this->sendBadRequest('Invalid Ids Provided',400);
+            }
+            $banners = Banners::whereIn('id',$ids)->get();
+            if($banners->isEmpty()){
+                return $this->sendBadRequest('Banners Not Found',404);
+            }
+            foreach($banners as $banner){
+                $banner->deleteFiles();
+                $banner->delete();
+        }
+        return $this->successResponse([],'Banners Removed Successfully',200);
+    }
+    catch(Exception $ex){
+        return $this->sendErrorResponse($ex);
+    }
+    }
+    
 }
    
 

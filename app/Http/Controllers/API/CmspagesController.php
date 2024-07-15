@@ -175,4 +175,23 @@ class CmspagesController extends Controller
         return $this->sendErrorResponse($ex);
     }
 }
+
+public function deleteall(Request $request){
+    try{
+        $ids =  $request->input('cmsIds');
+        if(empty($ids) || !is_array($ids)){
+            return $this->sendBadRequest('Invalid Ids Provided',400);
+        }
+        $cmsPages = Cms::whereIn('id',$ids)->get();
+        if($cmsPages->isEmpty()){
+            return $this->sendBadRequest('No Valid CMS Pages Found',404);
+        }
+        foreach($cmsPages as $cmsPage){
+            $cmsPage->delete();
+        }
+        return $this->successResponse([], "CMS Pages Removed Successfully",200);
+    }catch(Exception $ex){
+        return $this->sendErrorResponse($ex);
+    }
+}
 }

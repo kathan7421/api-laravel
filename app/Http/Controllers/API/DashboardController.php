@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Orders;
 use App\Models\Category;
+use App\Models\Company;
 use App\Models\Product;
 use App\Traits\ResponseTrait;
 
@@ -16,13 +17,13 @@ class DashboardController extends Controller
     public function getCounts(){
         try{
             $userCount = User::where('user_type','1')->count();
-            $orderCount = Orders::count();
+            $orderCount = Company::count();
             $categoryCount = Category::count();
             $productCount = Product::count();
 
             $data = [
                 'users'=>  $userCount,
-                'orders'=> $orderCount,
+                'companies'=> $orderCount,
                 'categories'=> $categoryCount,
                 'products' =>  $productCount,
             ];

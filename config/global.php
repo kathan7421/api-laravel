@@ -8,6 +8,7 @@ return [
         "api_url"=>env('API_URL'),
 
         'storage_url' => env('APP_URL').'/storage/app/public',
+        'public_url' => env('APP_URL') . '/public',
 
         'profile_image' => env('APP_URL').'/storage/app/public/',
         'product_image'=>env('APP_URL').'/storage/app/public/product/',

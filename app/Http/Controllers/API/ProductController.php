@@ -61,8 +61,8 @@ public function addItems(Request $request)
         $rules = [
             'name' => 'required|string|max:255',
             'description' => 'required|string',
-            'price' => 'required|numeric',
-            'qty' => 'required|integer',
+            // 'price' => 'required|numeric',
+            // 'qty' => 'required|integer',
             'sku' => 'nullable|string|max:10',
             // 'category_id' => 'required|integer',
             'image' => 'nullable|string', // Accept base64 string
@@ -89,8 +89,8 @@ public function addItems(Request $request)
             'name' => $inputs['name'],
             'slug' => $slug,
             'description' => $inputs['description'],
-            'price' => $inputs['price'],
-            'qty' => $inputs['qty'],
+            // 'price' => $inputs['price'],
+            // 'qty' => $inputs['qty'],
             'category_id' => $inputs['category_id'],
             'sku' => $sku,
             'image' => $imageName , // Return the full URL
@@ -150,8 +150,8 @@ public function updateItems(Request $request, $id)
         $rules = [
             'name' => 'sometimes|required|string|max:255',
             'description' => 'sometimes|required|string',
-            'price' => 'sometimes|required|numeric',
-            'qty' => 'sometimes|required|integer',
+            // 'price' => 'sometimes|required|numeric',
+            // 'qty' => 'sometimes|required|integer',
             'category_id' => 'sometimes|required|integer',
             'image' => 'nullable|string', // Accept base64 string
         ];
@@ -205,8 +205,8 @@ public function listItems(Request $request)
         $search = $request->input('search', null);
         $direction = strtoupper($request->input('sortDirection', 'ASC'));
 
-        $query = Product::query(); // Start building the query
-
+        $query = Product::with('category'); // Start building the query
+      
         if ($search) {
             $query->where('name', 'like', '%' . $search . '%');
         }
@@ -266,6 +266,26 @@ public function deleteItems($id)
     } catch (Exception $ex) {
         return $this->sendErrorResponse($ex);
     }
+}
+public function deleteall(Request $request){
+     try{
+        $ids = $request->input('productIds');
+        if(empty($ids) || !is_array($ids)){
+            return $this->sendBadRequest('Invalid Ids Provided',400);
+        }
+        $products = Product::whereIn('id',$ids)->get();
+        if($products->isEmpty()){
+            return $this->sendBadRequest('No Valid Services Found',404);
+        }
+        foreach($products as $product){
+            $product->deleteFiles();
+            $product->delete();
+        }
+        return $this->successResponse([], "Services Removed Successfully",200);
+
+     }catch(Exception $ex){
+        return $this->sendErrorResponse($ex);
+     }
 }
 }
 

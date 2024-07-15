@@ -35,7 +35,7 @@ class User extends Authenticatable
      * @var array<int, string>
      */
     protected $hidden = [
-        'password',
+        // 'password',
         'remember_token',
     ];
 
@@ -47,7 +47,19 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
     ];
-
+    public function getImageAttribute($value)
+    {
+        if (!$value) {
+            return config('global.profile_image') . "noimage.png";
+        }
+        
+        if (strpos($value, 'http') === 0) {
+            return $value;
+        }
+        
+        return config('global.public_url') . "/uploads/logos/" . $value;
+    }
+    
     public function prepareCreateData($inputs)
     {
         $data = [];
@@ -73,6 +85,13 @@ class User extends Authenticatable
         }
 
         return $data;
+    }
+    public function uploadFile($file, $directory)
+    {
+        $fileExtension = $file->getClientOriginalExtension();
+        $fileName = time() . '_' . uniqid() . '.' . $fileExtension;
+        Storage::disk('public')->put($directory . '/' . $fileName, File::get($file));
+        return $fileName;
     }
     public function uploadProfileImage($image)
     {

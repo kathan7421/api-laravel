@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Laravel\Passport\HasApiTokens;
 use Illuminate\Notifications\Notifiable;
-
+use App\Models\Category;
 use Hash;
 use Str;
 use Storage;
@@ -17,6 +17,11 @@ class Product extends Model
     use HasFactory , HasApiTokens , Notifiable;
     protected $table = 'product';
    protected $fillable = ['name', 'description', 'price', 'qty', 'category_id', 'image', 'slug', 'status', 'meta_title', 'meta_description', 'meta_keywords','sku'];
+   protected $appends = ['category_name'];
+   public function getCategoryNameAttribute()
+    {
+        return $this->category ? $this->category->name : null;
+    }
    public function getImageAttribute($value, $showFullPath = true)
    {
        if (!$value) {
@@ -86,5 +91,20 @@ class Product extends Model
    
        return $data;
    }
+   public function category()
+   {
+       return $this->belongsTo(Category::class, 'category_id', 'id');
+   }
+   public function deleteFiles()
+   {
+       $files = ['image'];
+   
+       foreach ($files as $file) {
+           if ($this->$file) {
+               Storage::disk('public')->delete('product/' . $file . '/' . $this->$file);
+           }
+       }
+   }
+   
 }
  ?>

@@ -225,4 +225,23 @@ public function deleteItems($id)
         return $this->sendErrorResponse($ex);
     }
 }
+public function deleteAll(Request $request){
+    try{
+        $ids= $request->input('countryIds');
+        if(empty($ids) || !is_array($ids)){
+            return $this->sendBadRequest('Invalid Request',400);
+        }
+        $country = Country::whereIn('id',$ids)->get();
+        if($country->isEmpty()){
+            return $this->sendBadRequest('Country Not Found',404);
+        }
+        foreach($country as $item){
+            $item->deleteFiles();
+            $item->delete();
+        }
+        return $this->successResponse([],'Country Deleted Successfully',200);
+    }catch(Exception $ex){
+        return $this->sendErrorResponse($ex);
+    }
+}
 }

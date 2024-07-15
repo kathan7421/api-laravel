@@ -86,4 +86,14 @@ class Country extends Model
             return $this->sendErrorResponse($ex);
         }
     }
+    public function deleteFiles()
+    {
+        $files = ['image'];
+    
+        foreach ($files as $file) {
+            if ($this->$file) {
+                Storage::disk('public')->delete('country/' . $file . '/' . $this->$file);
+            }
+        }
+    }
 }
