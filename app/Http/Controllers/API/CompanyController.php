@@ -11,6 +11,9 @@ use App\Models\User;
 use App\Traits\ResponseTrait;
 use App\Mail\UserPasswordMail;
 use Illuminate\Support\Facades\Mail;
+use Symfony\Component\HttpFoundation\StreamedResponse;
+use League\Csv\Writer;
+use League\Csv\Reader;
 use Hash;
 
 
@@ -26,55 +29,66 @@ class CompanyController extends Controller
             return $this->sendErrorResponse($ex);
         }
     }
-    // public function listItems(Request $request)
-    // {
-    //     try{
-
-    //     $sortBy = $request->input('sortBy', 'id');
-    //     $search = $request->input('search', null);
-    //     $direction = strtoupper($request->input('sortDirection', 'ASC'));
-
-    //     $query = User::with('company')->where('user_type', 3);
-
-    //     if ($search) {
-    //         $query->where('name', 'like', '%' . $search . '%');
-    //     }
-
-    //     $query->orderBy($sortBy, $direction);
-    //     $companies = $query->get();
-
-    //     return response()->json(['data' => $companies, 'List of Companies for user_type = 3'], 200);
-    // }catch(Exception $ex){
-    //     return $this->sendErrorResponse($ex);
-    // }
-    // } 
-
-    public function listItems(Request $request)
+    public function export(Request $request)
     {
-        try {
-            $sortBy = $request->input('sortBy', 'id');
-            $search = $request->input('search', null);
-            $direction = strtoupper($request->input('sortDirection', 'ASC'));
+        $companies = Company::all();
+    
+        $csv = Writer::createFromFileObject(new \SplTempFileObject());
+    
+        // Add CSV headers
+        $csv->insertOne(['ID', 'Name', 'Email', 'Created At', 'Updated At']);
+    
+        // Add data rows
+        foreach ($companies as $company) {
+            $csv->insertOne([$company->id, $company->name, $company->email, $company->created_at, $company->updated_at]);
+        }
+    
+        // Set response headers
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="company.csv"',
+        ];
+    
+        // Return CSV file as download
+        return response()->streamDownload(function () use ($csv) {
+            echo $csv->getContent();
+        }, 'company.csv', $headers);
+    }
+    
+    public function listItems(Request $request)
+{
+    try {
+        $sortBy = $request->input('sortBy', 'id');
+        $search = $request->input('search', null);
+        $direction = strtoupper($request->input('sortDirection', 'ASC'));
 
-            $query = User::with('company')->where('user_type', 3);
+        $query = User::with('company')->where('user_type', 3);
 
-            if ($search) {
-                $query->where('name', 'like', '%' . $search . '%');
+        if ($search) {
+            $query->where('name', 'like', '%' . $search . '%');
+        }
+
+        $query->orderBy($sortBy, $direction);
+        $users = $query->get();
+
+        // Extract companies from users and format the response
+        $companies = $users->map(function ($user) {
+            $company = $user->company;
+
+            if ($company) {
+                // Convert status to boolean
+                $company->status = $company->status == '1';
             }
 
-            $query->orderBy($sortBy, $direction);
-            $users = $query->get();
+            return $company;
+        });
 
-            // Extract companies from users and format the response
-            $companies = $users->map(function ($user) {
-                return $user->company;
-            });
-
-            return response()->json(['data' => $companies, 'message' => 'List of Companies for user_type = 3'], 200);
-        } catch (\Exception $ex) {
-            return $this->sendErrorResponse($ex);
-        }
+        return response()->json(['data' => $companies, 'message' => 'List of Companies for user_type = 3'], 200);
+    } catch (\Exception $ex) {
+        return $this->sendErrorResponse($ex);
     }
+}
+
     public function addItems(Request $request)
     {
         try {
@@ -217,7 +231,7 @@ class CompanyController extends Controller
     try {
         $user = User::findOrFail($userId);
         $inputs = $request->all();
-
+     
         $rules = [
             'name' => 'required|string',
             'description' => 'nullable|string',
@@ -252,6 +266,7 @@ class CompanyController extends Controller
             'phone' => $inputs['phone'],
             'address' => $inputs['address'],
             'fax' => $inputs['fax'],
+           
         ];
 
         // Handle logo update
@@ -274,7 +289,7 @@ class CompanyController extends Controller
             $company->deleteFiles($company->document); // Delete old document file if exists
             $companyData['document'] = $documentFileName;
         }
-
+ 
         // Update company with the modified data
         $company->update($companyData);
 
@@ -334,10 +349,11 @@ class CompanyController extends Controller
             }
 
             // Return user and company details as JSON response
-            return response()->json([
-                'user' => $user,
-                'company' => $company,
-            ], 200);
+            $responseData = array_merge(
+                $user->toArray(),
+                $user->company ? $user->company->toArray() : []
+            );
+            return response()->json(['company'=>$responseData], 200);
 
         } catch (\Exception $ex) {
             return response()->json(['error' => $ex->getMessage()], 500);
@@ -347,28 +363,35 @@ class CompanyController extends Controller
     {
         try {
             $user = User::find($id);
-
+    
             if ($user) {
                 // Toggle user status
                 $user->status = $user->status == '1' ? '0' : '1';
                 $user->save();
-
+    
                 // Find associated company and toggle its status if exists
-                $company = Company::where('user_id',$user->id)->first();
+                $company = Company::where('user_id', $user->id)->first();
                 if ($company) {
                     $company->status = $user->status; // Sync company status with user status
                     $company->save();
                 }
-
-                return response()->json(['message' => 'User and associated company status updated successfully'], 200);
+    
+                // Determine the status and return the appropriate boolean value
+                $isActive = $user->status == '1';
+    
+                return response()->json([
+                    'message' => 'User and associated company status updated successfully',
+                    'active' => $isActive
+                ], 200);
             }
-
+    
             return response()->json(['message' => 'User or associated company not found'], 404);
-
+    
         } catch (\Exception $ex) {
             return response()->json(['error' => $ex->getMessage()], 500);
         }
-}
+    }
+    
 public function deleteCompanies(Request $request)
 {
     $companyIds = $request->input('companyIds');
@@ -440,6 +463,70 @@ public function activeCompany(Request $request, $id)
     } catch (Exception $ex) {
         return response()->json(['error' => $ex->getMessage()], 500);
     }
+}
+public function import(Request $request)
+{
+    $request->validate([
+        'file' => 'required|mimes:csv,txt',
+    ]);
+
+    $path = $request->file('file')->getRealPath();
+    $csv = Reader::createFromPath($path, 'r');
+    $csv->setHeaderOffset(0);
+
+    $records = $csv->getRecords();
+    $errors = [];
+
+    foreach ($records as $index => $record) {
+        // Validate company and user data
+        $validator = Validator::make($record, [
+            // 'ID' => 'required|integer',
+            'Name' => 'required|string|max:255',
+            'Email' => 'required|email',
+            // 'Created At' => 'required|date',
+            // 'Updated At' => 'required|date',
+            'Password' => 'required|string|min:8', // Ensure password is present and valid
+        ]);
+
+        if ($validator->fails()) {
+            $errors[$index] = $validator->errors()->all();
+            continue;
+        }
+
+        // Create or update user and company
+        try {
+            // Create or update user
+            $user = User::updateOrCreate(
+                ['email' => $record['Email']],
+                [
+                    'name' => $record['Name'],
+                    'email' => $record['Email'],
+                    'password' => Hash::make($record['Password']), // Hash the password correctly
+                    'user_type' => '3',
+                ]
+            );
+
+            // Create or update company
+            Company::updateOrCreate(
+                // ['id' => $record['ID']],
+                [
+                    'user_id' => $user->id, // Associate the user with the company
+                    'name' => $record['Name'],
+                    'email' => $record['Email'],
+                    'created_at' => $record['Created At'],
+                    'updated_at' => $record['Updated At']
+                ]
+            );
+        } catch (\Exception $e) {
+            $errors[$index] = [$e->getMessage()];
+        }
+    }
+
+    if (!empty($errors)) {
+        return response()->json(['message' => 'Some records failed to import', 'errors' => $errors], 422);
+    }
+
+    return response()->json(['message' => 'File imported successfully'], 200);
 }
 
 private function sendPasswordEmail($user, $password)

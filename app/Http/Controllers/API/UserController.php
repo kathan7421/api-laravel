@@ -46,4 +46,17 @@ class UserController extends Controller
         }
 
     }
+    public function checkEmailExists(Request $request)
+    {
+        $email = $request->query('email');
+
+        // Ensure the email parameter is provided
+        if (!$email) {
+            return response()->json(['error' => 'Email parameter is required'], 400);
+        }
+
+        $exists = User::where('email', $email)->exists();
+
+        return response()->json($exists);
+    }
 }

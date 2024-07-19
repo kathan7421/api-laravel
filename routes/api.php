@@ -36,6 +36,7 @@ Route::post('forget-password', 'API\AuthController@forgetPassword');
 Route::post('password/reset', 'API\AuthController@resetPassword')->name('password.reset');
 Route::get('cms/all','API\CmspagesController@index'); // Fetch all CMS pages
 Route::get('cms/{slug}', 'API\CmspagesController@show'); // Fetch a single CMS page by slug
+Route::get('check-email-exists','API\UserController@checkEmailExists');
 
 // Route::get('get','API\AuthController@getitems');
 
@@ -119,6 +120,7 @@ Route::group(['middleware'=>'auth:api'],function(){
 	Route::post('company/activecompany/{id}','API\CompanyController@activeCompany');
 	Route::post('company/getcountcompany/','API\CompanyController@getCount');
 	Route::delete('company', 'API\CompanyController@deleteCompanies');
+	Route::post('company/upload','API\CompanyController@import');
 
 	
 	//location coutry city state
