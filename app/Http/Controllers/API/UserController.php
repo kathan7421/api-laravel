@@ -49,14 +49,14 @@ class UserController extends Controller
     public function checkEmailExists(Request $request)
     {
         $email = $request->query('email');
-
-        // Ensure the email parameter is provided
-        if (!$email) {
-            return response()->json(['error' => 'Email parameter is required'], 400);
-        }
-
-        $exists = User::where('email', $email)->exists();
-
-        return response()->json($exists);
+        $userId = $request->query('userId'); // Get the user ID from query parameters
+    
+        // Check if email exists in the database excluding the current user's email
+        $emailExists = User::where('email', $email)
+            ->where('id', '!=', $userId) // Exclude current user's email
+            ->exists();
+    
+        return response()->json($emailExists);
     }
+    
 }

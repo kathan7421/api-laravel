@@ -235,7 +235,7 @@ class CompanyController extends Controller
         $rules = [
             'name' => 'required|string',
             'description' => 'nullable|string',
-            'email' => 'required|email',
+            'email' => 'required|email|unique:users,email,' . $userId,
             'phone' => 'required|string',
             'address' => 'required|string',
             'fax' => 'required|string',
@@ -251,7 +251,10 @@ class CompanyController extends Controller
 
         // Find the user and associated company
         $company = $user->company;
-
+        if ($user->email !== $inputs['email']) {
+            $user->email = $inputs['email'];
+            $user->email_verified_at = null; // Reset email verification status
+        }
         // Update User details
         $user->update([
             'name' => $inputs['name'],
@@ -264,6 +267,7 @@ class CompanyController extends Controller
             'name' => $inputs['name'],
             'description' => $inputs['description'],
             'phone' => $inputs['phone'],
+            'email'=> $inputs['email'],
             'address' => $inputs['address'],
             'fax' => $inputs['fax'],
            
