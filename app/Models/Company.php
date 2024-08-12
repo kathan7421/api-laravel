@@ -12,11 +12,20 @@ class Company extends Model
     use HasFactory;
 
     protected $table = 'company_details';
+
     protected $fillable = [
         'user_id', 'name', 'description', 'fax', 'email', 'phone', 'website',
         'address', 'logo', 'cover_photo', 'country', 'city', 'register_number',
         'gst_number', 'state', 'status', 'document', 'slug', 'is_active','tag_line'
     ];
+    public function inquiries()
+    {
+        return $this->hasMany(Inquiry::class, 'company_id');
+    }
+    public function averageRating()
+{
+    return $this->reviews()->avg('rating');
+}
     public function getLogoAttribute($value)
     {
         if (!$value) {

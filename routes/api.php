@@ -37,6 +37,11 @@ Route::post('password/reset', 'API\AuthController@resetPassword')->name('passwor
 Route::get('cms/all','API\CmspagesController@index'); // Fetch all CMS pages
 Route::get('cms/{slug}', 'API\CmspagesController@show'); // Fetch a single CMS page by slug
 Route::get('check-email-exists','API\UserController@checkEmailExists');
+// Route::get('/test-broadcast', function () {
+//     event(new \App\Events\InquiryAdded(['name' => 'Test Inquiry']));
+//     return 'Event sent!';
+// });
+
 
 // Route::get('get','API\AuthController@getitems');
 
@@ -132,6 +137,21 @@ Route::group(['middleware'=>'auth:api'],function(){
 	//Users
 	Route::get('users','API\UserController@listItems');
 	Route::post('users/add','API\UserController@addItems');
+
+
+	//INQUIRY
+	Route::get('inquiry','API\InquiryController@listItems');
+	Route::post('inquiry/changestatus/{id}','API\InquiryController@changeStatus');
+	Route::delete('inquiry/{id}','API\InquiryController@softDelete');
+	Route::post('inquiry/restore-all','API\InquiryController@restoreAll');
+	Route::get('inquiry/{id}','API\InquiryController@getById');
+	Route::get('inquiry/export','API\InquiryController@export');
+	Route::post('send-inquiries', 'API\InquiryController@sendInquiries');
+	Route::delete('inquiry','API\InquiryController@bulkDelete');
+	Route::post('inquiry/store','API\InquiryController@store');
+
+   //REviews
+   Route::get('reviews','API\ReviewController@listItems');
 
 	
 });

@@ -46,17 +46,25 @@ class UserController extends Controller
         }
 
     }
-    public function checkEmailExists(Request $request)
-    {
-        $email = $request->query('email');
-        $userId = $request->query('userId'); // Get the user ID from query parameters
-    
-        // Check if email exists in the database excluding the current user's email
-        $emailExists = User::where('email', $email)
-            ->where('id', '!=', $userId) // Exclude current user's email
-            ->exists();
-    
-        return response()->json($emailExists);
+   // In your Laravel controller
+// In your Laravel controller
+public function checkEmailExists(Request $request)
+{
+    $email = $request->input('email');
+    $id = $request->input('id'); // Optional
+
+    $query = User::where('email', $email);
+
+    if ($id) {
+        $query->where('id', '!=', $id);
     }
-    
+
+    $exists = $query->exists();
+
+    return response()->json([
+        'exists' => $exists
+    ]);
+}
+
+
 }

@@ -15,6 +15,11 @@ class CreateReviewTable extends Migration
     {
         Schema::create('review', function (Blueprint $table) {
             $table->id();
+            $table->string('company_id')->nullable();
+            $table->text('comment')->nullable();
+            $table->string('rating')->nullable();
+            $table->string('user_id')->nullable();
+            $table->enum('status',['1','2','3'])->default(1)->comment('1->Pending,2->approved,3->rejected');
             $table->timestamps();
         });
     }

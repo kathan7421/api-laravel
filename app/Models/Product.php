@@ -38,11 +38,11 @@ class Product extends Model
            return basename($value); // Return only the image name
        }
    }
-   
-// public function getImageAttribute($value)
-//     {
-//         return basename($value); // This will return just the file name
-//     }
+   public function inquiries()
+   {
+       return $this->hasMany(Inquiry::class, 'service_id');
+   }
+
    public function prepareCreateData($inputs)
    {
        $data = [];
