@@ -152,6 +152,16 @@ Route::group(['middleware'=>'auth:api'],function(){
 
    //REviews
    Route::get('reviews','API\ReviewController@listItems');
+   Route::post('reviews/changestatus/{id}','API\ReviewController@updateStatus');
+   Route::post('reviews/store','API\ReviewController@store');
+   Route::post('reviews/update/{id}','API\ReviewController@update');
+   Route::delete('reviews','API\ReviewController@deleteBulk');
+   Route::delete('reviews/{id}','API\ReviewController@destroy');
+   Route::get('reviews/{id}','API\ReviewController@averageRating');
+   Route::get('reviews/{id}','API\ReviewController@getByid');
+
+   
+
 
 	
 });

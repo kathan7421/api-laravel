@@ -8,6 +8,7 @@ use App\Traits\ResponseTrait;
 use Illuminate\Support\Facades\Validator;
 use App\Models\Inquiry;
 use App\Models\Company;
+use App\Models\User;
 use App\Mail\InquiryMail;
 use App\Models\Product;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -268,7 +269,8 @@ class InquiryController extends Controller
     
             // Dispatch the event
             event(new InquiryAdded($inquiry));
-    
+            $user = User::where('user_type',1)->get();
+            \Mail::to($user->email)->send(new \App\Mail\NewInquiryNotification($inquiry));
             return response()->json($inquiry, 201);
         } catch (\Exception $ex) {
             return response()->json(['error' => $ex->getMessage()], 500);

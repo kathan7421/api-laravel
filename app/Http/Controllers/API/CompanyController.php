@@ -17,6 +17,7 @@ use League\Csv\Reader;
 use Hash;
 
 
+
 class CompanyController extends Controller
 {
    
@@ -136,7 +137,7 @@ class CompanyController extends Controller
                 $documentBase64 = $request->input('document');
                 $documentFileName = $this->saveBase64File($documentBase64, 'documents');
             }
-    
+             $slug = Str::slug($request->name);
             // Create User
             $user = User::create([
                 'name' => $request->input('name'),
@@ -161,6 +162,7 @@ class CompanyController extends Controller
             $company->country = $request->input('country');
             $company->state = $request->input('state');
             $company->city = $request->input('city');
+            $company->slug =  $slug;
             $company->register_number = $request->input('register_number');
             $company->tag_line = $request->input('tag_line');
             $company->logo = $logoFileName; // Assuming 'logo' field in Company model

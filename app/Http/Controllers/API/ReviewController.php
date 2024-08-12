@@ -9,6 +9,7 @@ use App\Models\Review;
 use App\Models\Company;
 use Illuminate\Support\Facades\Validator;
 
+
 class ReviewController extends Controller
 {
     use ResponseTrait;
@@ -43,21 +44,72 @@ class ReviewController extends Controller
     public function store(Request $request)
     {
         try {
-            $validatedData = $request->validate([
-                'comment' => 'required|string|max:255',
-                'company_id' => 'required|exists:company_details,id',
-                'rating' => 'required|integer|between:1,5',
-                'status' => 'required|integer|in:1,2,3'
-            ]);
+           $inputs = $request->all();
 
-            $review = Review::create($validatedData);
+           $validator = Validator::make($request->all(),  [
+            'comment' => 'required|string|max:255',
+            'company_id' => 'required|exists:company_details,id',
+            'rating' => 'required|integer|between:1,5',
+           ]);
+          
+           if($validator->fails()){
+            return response()->json(['error'=>$validator->errors()->all()],400);
+           }
+           $reviews = Review::create([
+            'comment'=>$request->input('comment'),
+            'company_id'=>$request->input('company_id'),
+            'rating'=>$request->input('rating'),
+           ]);
 
-            return response()->json($review, 201);
+            return response()->json($reviews, 200);
         } catch (\Exception $ex) {
             return response()->json(['error' => $ex->getMessage()], 500);
         }
     }
-   
+    public function getByid($id){
+        try{
+            $review = Review::find($id);
+            if (!$review) {
+                return response()->json(['message' => 'Review not found'], 404);
+            }
+
+            return response()->json(['data'=>$review->toArray(),'message'=>'Review get Successfully',200]);
+        }
+        catch(Exception $ex){
+            return response()->json(['error' => $ex->getMessage()], 500);
+        }
+    }
+    // Update a review
+    public function update(Request $request, $id)
+    {
+        try {
+            $review = Review::find($id);
+            if (!$review) {
+                return response()->json(['message' => 'Review not found'], 404);
+            }
+
+            $validator = Validator::make($request->all(),  [
+                'comment' => 'required|string|max:255',
+                'company_id' => 'required|exists:company_details,id',
+                'rating' => 'required|integer|between:1,5',
+               ]);
+               if($validator->fails()){
+                return response()->json(['error'=>$validator->errors()->all()],400);
+               }
+               $reviewData = [
+                'comment' => $request->comment,
+                'company_id'=>$request->company_id,
+                'rating'=>$request->rating
+               ];
+
+            $review->update($reviewData);
+
+            return response()->json(['success' => 'Reviews details updated successfully.'], 200);
+        } catch (\Exception $ex) {
+            return response()->json(['error' => $ex->getMessage()], 500);
+        }
+    }
+
     //Update Status
     public function updateStatus(Request $request, $id)
     {
@@ -76,37 +128,16 @@ class ReviewController extends Controller
             }
             $review->status = $inputs['status'];
             $review->save();
-            return $this->successResponse($review->toArray(),'Status Changed Successfully',200);
+            return response()->json([
+                'message' => 'Status Changed Successfully'
+            ], 200);
 
 
         }catch(Exception $ex){
             return $this->sendErrorResponse($ex);
         }
     }
-    // Update a review
-    public function update(Request $request, $id)
-    {
-        try {
-            $review = Review::find($id);
-            if (!$review) {
-                return response()->json(['message' => 'Review not found'], 404);
-            }
-
-            $validatedData = $request->validate([
-                'comment' => 'sometimes|required|string|max:255',
-                'company_id' => 'sometimes|required|exists:company_details,id',
-                'rating' => 'sometimes|required|integer|between:1,5',
-                'status' => 'sometimes|required|integer|in:1,2,3'
-            ]);
-
-            $review->update($validatedData);
-
-            return response()->json($review, 200);
-        } catch (\Exception $ex) {
-            return response()->json(['error' => $ex->getMessage()], 500);
-        }
-    }
-
+   
     // Delete a review
     public function destroy($id)
     {
@@ -123,13 +154,37 @@ class ReviewController extends Controller
             return response()->json(['error' => $ex->getMessage()], 500);
         }
     }
-
+    public function deleteBulk(Request $request){
+        try{
+            
+            $reviewIds = $request->input('reviewsIds');
+            if(empty($reviewIds) || !is_array($reviewIds)) {
+                return response()->json(['error' => 'Invalid reviews Ids'], 400);
+            }
+            $reviews = Review::whereIn('id',$reviewIds)->get();
+            if ($reviews->isEmpty()) {
+                return response()->json(['error' => 'No valid companies found.'], 404);
+            }
+            foreach($reviews as $review){
+                $review->delete();
+            }
+            return response()->json(['success' => 'Selected Reviews  Deleted Successfully.'], 200);
+        } catch (\Exception $ex) {
+            return response()->json(['error' => $ex->getMessage()], 500);
+        }
+        
+    }
     // Get average rating for a company
     public function averageRating($companyId)
     {
         try {
+            $id = Review::where('company_id',$companyId)->first();
+            if(!$id){
+                return response()->json(['error'=>'Not Found!'],400);
+            }
             $averageRating = Review::where('company_id', $companyId)->avg('rating');
-            return response()->json(['average_rating' => $averageRating], 200);
+            $formattedAverageRating = number_format((float) $averageRating, 1, '.', '');
+            return response()->json(['average_rating' => $formattedAverageRating], 200);
         } catch (\Exception $ex) {
             return response()->json(['error' => $ex->getMessage()], 500);
         }
